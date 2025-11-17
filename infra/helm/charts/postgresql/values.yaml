@@ -1,0 +1,54 @@
+# Default values for postgresql
+
+# Enable/disable PostgreSQL deployment
+enabled: true
+
+auth:
+  username: petclinic
+  database: petclinic
+  # External secret references (managed by External Secrets Operator)
+  secretName: petclinic-db-secret
+  postgresPasswordKey: postgres-password
+  passwordKey: password
+
+primary:
+  persistence:
+    enabled: true
+    size: 8Gi
+    # storageClass: ""
+    # existingClaim: ""
+  
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 250m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+metrics:
+  enabled: true
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 250m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+image:
+  repository: postgres
+  tag: "16-alpine"
+  pullPolicy: IfNotPresent
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  fsGroup: 999
+
+service:
+  type: ClusterIP
+  port: 5432
+
+networkPolicy:
+  enabled: true 

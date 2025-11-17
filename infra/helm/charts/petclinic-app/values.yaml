@@ -1,0 +1,119 @@
+# Default values for petclinic-app
+
+# Application configuration
+app:
+  name: petclinic-app
+  version: "3.5.0"
+  
+# Image configuration
+image:
+  repository: "yanirlab.jfrog.io/petclinic-docker/spring-petclinic" 
+  tag: "417f8e52"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets (disabled for public image)
+# imagePullSecrets:
+#   - name: jfrog-registry-secret
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: petclinic.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+springboot:
+  profiles:
+    active: postgres
+  jvm:
+    opts: "-Xmx256m -Xms256m"
+
+database:
+  port: 5432
+  name: petclinic
+  # Secret configuration (managed by External Secrets Operator)
+  secretName: petclinic-db-secret
+  usernameKey: username
+  passwordKey: password
+  external:
+    enabled: false
+    host: ""
+    port: 5432
+    database: petclinic
+
+externalSecrets:
+  enabled: true
+  secretStore:
+    name: github-secret-store
+    kind: SecretStore
+  refreshInterval: 1h
+
