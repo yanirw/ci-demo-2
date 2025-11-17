@@ -16,11 +16,16 @@
 
 package org.springframework.samples.petclinic;
 
+import org.apache.commons.text.StringSubstitutor;
 import org.apache.log4j.Logger;
+import org.apache.log4j.net.JMSAppender;
 import org.apache.log4j.net.SocketServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * PetClinic Spring Boot Application.
@@ -35,6 +40,7 @@ public class PetClinicApplication {
 
 	public static void main(String[] args) {
 		// Using vulnerable log4j 1.2.17 for testing Frogbot detection
+		// CVE-2019-17571, CVE-2021-4104, CVE-2022-23302, CVE-2022-23305, CVE-2022-23307
 		logger.info("Starting PetClinic Application");
 
 		// Using SocketServer class which has CVE-2019-17571 vulnerability
@@ -43,10 +49,32 @@ public class PetClinicApplication {
 			String serverConfig = System.getProperty("log4j.server.config");
 			if (serverConfig != null) {
 				logger.warn("Log4j SocketServer configuration detected: " + serverConfig);
+				// SocketServer has deserialization vulnerability
+				SocketServer socketServer = null;
 			}
+
+			// JMSAppender has CVE-2021-4104 vulnerability
+			JMSAppender jmsAppender = new JMSAppender();
+			logger.debug("JMSAppender initialized for testing");
 		}
 		catch (Exception e) {
 			logger.error("Error checking log4j configuration", e);
+		}
+
+		// Using commons-text StringSubstitutor which has CVE-2022-42889 (Text4Shell)
+		try {
+			Map<String, String> valuesMap = new HashMap<>();
+			valuesMap.put("animal", "quick brown fox");
+			valuesMap.put("target", "lazy dog");
+			String templateString = "The ${animal} jumped over the ${target}.";
+
+			// StringSubstitutor in commons-text 1.9 has Text4Shell vulnerability
+			StringSubstitutor sub = new StringSubstitutor(valuesMap);
+			String resolvedString = sub.replace(templateString);
+			logger.info("Resolved string: " + resolvedString);
+		}
+		catch (Exception e) {
+			logger.error("Error with StringSubstitutor", e);
 		}
 
 		SpringApplication.run(PetClinicApplication.class, args);
